@@ -1,0 +1,6 @@
+include README.md
+recursive-include assets *.svg
+recursive-include docs *.md
+recursive-include integration *.sql
+recursive-include tests *.py *.mjs
+recursive-include src/zentr_cli/vendor *.mjs *.md

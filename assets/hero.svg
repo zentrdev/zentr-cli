@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500" role="img" aria-labelledby="title desc">
+<title id="title">Zentr CLI — your services, one terminal</title><desc id="desc">Purple Zentr wordmark and an illustrated terminal showing the CLI command groups.</desc>
+<defs><linearGradient id="accent"><stop stop-color="#a77bff"/><stop offset="1" stop-color="#7447d8"/></linearGradient><radialGradient id="glow"><stop stop-color="#7447d8" stop-opacity=".25"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>
+<rect width="1200" height="500" rx="24" fill="#000"/><ellipse cx="220" cy="200" rx="400" ry="310" fill="url(#glow)"/>
+<rect x="1" y="1" width="1198" height="498" rx="24" fill="none" stroke="#23202a"/>
+<g font-family="ui-monospace, SFMono-Regular, Consolas, monospace">
+<text x="64" y="85" fill="#a77bff" font-size="13" letter-spacing="4">ZENTR.DEV / COMMAND LINE</text>
+<text x="60" y="202" fill="#f3f1f7" font-size="92" font-weight="800" letter-spacing="-6">zentr<tspan fill="#a77bff">_</tspan></text>
+<text x="64" y="250" fill="#f3f1f7" font-size="23">Your services. One terminal.</text>
+<text x="64" y="292" fill="#9893a4" font-size="15">Explore. Encrypt. Convert. Connect.</text>
+<rect x="64" y="335" width="365" height="51" rx="8" fill="#0e0b14" stroke="#23202a"/>
+<text x="84" y="367" font-size="17" fill="#9893a4">$ <tspan fill="#f3f1f7">zentr</tspan><tspan fill="#a77bff"> ▌</tspan></text>
+<text x="64" y="442" fill="#9893a4" font-size="12" letter-spacing="2">INTERACTIVE BY DEFAULT · SCRIPTABLE BY DESIGN</text>
+<rect x="562" y="63" width="574" height="374" rx="12" fill="#08060c" stroke="#352747"/>
+<path d="M562 108H1136" stroke="#23202a"/><circle cx="586" cy="86" r="5" fill="#7447d8"/><circle cx="605" cy="86" r="5" fill="#9893a4"/><circle cx="624" cy="86" r="5" fill="#a77bff"/>
+<text x="1108" y="91" text-anchor="end" fill="#9893a4" font-size="12">zentr / terminal</text>
+<text x="592" y="150" fill="#a77bff" font-size="19" font-weight="700">Z E N T R</text>
+<text x="592" y="178" fill="#9893a4" font-size="12">ARROWS TO MOVE · ENTER TO OPEN</text>
+<rect x="582" y="198" width="534" height="35" rx="5" fill="#20132f"/>
+<g font-size="15"><text x="595" y="221" fill="#a77bff">› STATUS    <tspan fill="#f3f1f7">Service health &amp; uptime</tspan></text>
+<text x="611" y="254" fill="#f3f1f7">EXPLORE   <tspan fill="#9893a4">Find your next tool</tspan></text>
+<text x="611" y="287" fill="#f3f1f7">DROP      <tspan fill="#9893a4">Encrypted file sharing</tspan></text>
+<text x="611" y="320" fill="#f3f1f7">CONVERT   <tspan fill="#9893a4">A new format, one command</tspan></text>
+<text x="611" y="353" fill="#f3f1f7">ACCOUNT   <tspan fill="#9893a4">Browser sign-in</tspan></text>
+<text x="611" y="386" fill="#f3f1f7">DOCS      <tspan fill="#9893a4">The details, on demand</tspan></text></g>
+</g></svg>
