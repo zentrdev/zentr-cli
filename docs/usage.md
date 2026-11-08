@@ -40,15 +40,15 @@ zentr convert file recording.wav  # Prompts for format and output
 
 Incomplete commands ask only for missing required values. Fully specified commands
 run directly. `zentr ui` and `zentr tui` explicitly open the home interface.
-The black-and-purple menu includes an ASCII Zentr logo, service status, service
+The black-and-purple menu includes a spaced Zentr wordmark, service status, service
 browsing, account controls, Drop uploads/downloads/text/shortening, and conversion
 prompts. Use arrow keys and Enter to open an item, Escape to go back, and Ctrl-C
-to dismiss a dialog. Tab moves between controls. Path prompts support Tab completion;
+to dismiss a dialog. Tab moves through menu rows. Path prompts support Tab completion;
 enter paths and URLs directly, without shell quotes. Output remains visible in your
 terminal; press Enter after a command to return to the menu.
 
-The large ASCII logo appears when the terminal is at least 55 columns by 28 rows;
-smaller terminals use a compact header. Set `NO_COLOR=1` for a monochrome interface.
+Menus and forms use the same terminal panel. On narrow terminals, rows use shorter
+descriptions or just the command name. Set `NO_COLOR=1` for a monochrome interface.
 If stdin or stdout is not a terminal, or `TERM=dumb`, there are no prompts:
 `zentr` and empty command groups print the relevant command list; incomplete
 commands return an argument error. Explicit `zentr ui` also falls back to help.

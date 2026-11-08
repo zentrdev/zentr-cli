@@ -1,77 +1,130 @@
 """Interactive terminal launcher; command implementations remain shared with CLI."""
 import os
-import shutil
+import textwrap
 import sys
 from pathlib import Path
 
 from prompt_toolkit import prompt
 from prompt_toolkit.application import Application
 from prompt_toolkit.completion import PathCompleter
-from prompt_toolkit.filters import has_focus
+from prompt_toolkit.application.current import get_app
+from prompt_toolkit.filters import Condition
 from prompt_toolkit.key_binding import KeyBindings, merge_key_bindings
-from prompt_toolkit.layout import Layout, HSplit
-from prompt_toolkit.shortcuts import input_dialog
+from prompt_toolkit.layout import Layout, HSplit, VSplit, Window, ConditionalContainer, Dimension
+from prompt_toolkit.layout.containers import HorizontalAlign, VerticalAlign
+from prompt_toolkit.layout.controls import FormattedTextControl
+from prompt_toolkit.mouse_events import MouseEventType
+
 from prompt_toolkit.styles import Style
-from prompt_toolkit.widgets import Button, Dialog, Label, RadioList
+from prompt_toolkit.widgets import TextArea
 
 from . import __version__
 from .client import ZentrError
 
-BANNER = r""" _____  _____  _   _  _____  ____
-|__  / | ____|| \ | ||_   _||  _ \
-  / /  |  _|  |  \| |  | |  | |_) |
- / /_  | |___ | |\  |  | |  |  _ <
-/____| |_____||_| \_|  |_|  |_| \_\
-""".rstrip()
+BANNER = 'Z E N T R'
 
 STYLE = Style.from_dict({
-    'dialog': 'bg:#000000 #f3f1f7',
-    'dialog.body': 'bg:#000000 #f3f1f7',
-    'dialog frame.label': 'bg:#000000 #a77bff bold',
-    'dialog frame.border': '#7447d8',
-    'dialog shadow': 'bg:#000000',
-    'radio': '#9893a4',
-    'radio-selected': '#a77bff bold',
-    'radio-checked': '#a77bff bold',
-    'button': 'bg:#23202a #f3f1f7',
-    'button.focused': 'bg:#7447d8 #ffffff bold',
-    'text-area': 'bg:#0e0b14 #f3f1f7',
+    'screen': 'bg:#000000 #f3f1f7', 'panel': 'bg:#08060c #f3f1f7',
+    'muted': '#9893a4', 'accent': '#a77bff bold', 'edge': '#352747',
+    'selected': 'bg:#20132f #f3f1f7', 'field': 'bg:#20132f #f3f1f7',
 })
-
+MONO = Style.from_dict({'selected': 'reverse', 'accent': 'bold', 'field': 'underline'})
 MENU = [
-    ('status', 'STATUS     Service health, latency and uptime'),
-    ('services', 'EXPLORE    List or open Zentr services'),
-    ('drop', 'DROP       Encrypt, share and download'),
-    ('convert', 'CONVERT    Upload a file and convert it'),
-    ('account', 'ACCOUNT    Browser sign-in and profile'),
-    ('docs', 'DOCS       Open Zentr documentation'),
-    ('quit', 'QUIT       Return to your shell'),
+    ('status', 'STATUS    Service health and uptime'),
+    ('services', 'EXPLORE   Browse Zentr services'),
+    ('drop', 'DROP      Encrypted file sharing'),
+    ('convert', 'CONVERT   Convert a file'),
+    ('account', 'ACCOUNT   Browser sign-in'),
+    ('docs', 'DOCS      Project documentation'),
+    ('quit', 'QUIT      Return to shell'),
 ]
 
 
 def style():
-    # Respect explicit monochrome preferences.
-    return Style.from_dict({}) if 'NO_COLOR' in os.environ else STYLE
+    return MONO if 'NO_COLOR' in os.environ else STYLE
+
+
+def _width():
+    return max(1, min(66, get_app().output.get_size().columns - 4))
+
+
+def _content_width():
+    return max(1, _width() - 4)
+
+
+def _line(text, css=''):
+    return Window(FormattedTextControl(text), height=1, style=css)
+
+
+def _screen(title, description, body, focus, keys, hint):
+    # The same shell surrounds navigation and editable fields. Its fixed-width
+    # column is centered on wide displays and shrinks with the terminal.
+    roomy = Condition(lambda: get_app().output.get_size().rows >= 17)
+    header = _line(lambda: [('class:accent', '● '), ('class:muted', '● '), ('class:accent', '●'),
+                            ('class:muted', 'zentr / terminal'.rjust(max(16, _content_width() - 5)))])
+    def wrapped():
+        return textwrap.fill(description, width=_content_width())
+    intro = Window(FormattedTextControl(wrapped), style='class:muted', dont_extend_height=True)
+    items = [ConditionalContainer(_line(''), roomy), header, _line(lambda: '─' * _content_width(), 'class:edge'),
+             ConditionalContainer(_line(''), roomy), _line(title, 'class:accent'), intro,
+             ConditionalContainer(_line(''), roomy), body,
+             ConditionalContainer(_line(''), roomy), _line(hint, 'class:muted'),
+             ConditionalContainer(_line(''), roomy)]
+    card = VSplit([Window(width=2), HSplit(items), Window(width=2)], width=_width,
+                  style='class:panel', padding=0)
+    canvas = HSplit([VSplit([card], align=HorizontalAlign.CENTER)], align=VerticalAlign.CENTER,
+                    style='class:screen')
+    app = Application(layout=Layout(canvas, focused_element=focus), key_bindings=keys,
+                      full_screen=True, mouse_support=True, style=style(), include_default_pygments_style=False)
+    return run_dialog(app)
 
 
 def choose(title, description, values, home=False):
-    width, height = shutil.get_terminal_size((80, 24))
-    art = BANNER if home and width >= 55 and height >= 28 else 'Z E N T R  /  TERMINAL'
-    text = (art + f'\n\nv{__version__}  |  zentr.dev\n\n' if home else '') + description
-    choices = RadioList(values, select_on_focus=True, show_scrollbar=False)
+    selected = 0
     keys = KeyBindings()
-
-    @keys.add('enter', filter=has_focus(choices), eager=True)
+    def move(delta):
+        nonlocal selected
+        selected = (selected + delta) % len(values)
+    for key, delta in [('up', -1), ('down', 1), ('s-tab', -1), ('tab', 1), ('k', -1), ('j', 1)]:
+        keys.add(key)(lambda event, delta=delta: move(delta))
+    @keys.add('enter', eager=True)
     def accept(event):
-        event.app.exit(result=choices.current_value)
+        event.app.exit(result=values[selected][0])
+    @keys.add('q')
+    def back(event):
+        event.app.exit()
 
-    dialog = Dialog(title=title, body=HSplit([Label(text), choices], padding=1),
-                    buttons=[Button('Open', handler=lambda: app.exit(result=choices.current_value)),
-                             Button('Quit' if home else 'Back', handler=lambda: app.exit())],
-                    with_background=True)
-    app = Application(layout=Layout(dialog, focused_element=choices), key_bindings=keys,
-                      full_screen=True, mouse_support=True, style=style())
-    return run_dialog(app)
+    def render():
+        lines = []
+        width = _content_width()
+        for index, (value, label) in enumerate(values):
+            active = index == selected
+            name, desc = (label.split(None, 1) if home else (label, ''))
+            marker = '› ' if active else '  '
+            name = (name.ljust(10) if desc and width >= 22 else name)[:max(0, width-2)]
+            space = max(0, width - 2 - len(name))
+            short = {'status': 'Health & uptime', 'services': 'Find services', 'drop': 'File sharing',
+                     'convert': 'File conversion', 'account': 'Sign in', 'docs': 'Project guides', 'quit': 'Exit'}
+            detail = desc if len(desc) <= space else short.get(value, '')
+            if len(detail) > space or width < 22:
+                detail = ''
+            row = 'class:selected ' if active else ''
+            def click(event, value=value):
+                if event.event_type == MouseEventType.MOUSE_UP:
+                    get_app().exit(result=value)
+            if active:
+                lines.append(('[SetCursorPosition]', ''))
+            lines.extend([(row + ('class:accent' if active else ''), marker + name, click),
+                          (row + ('' if active else 'class:muted'), detail, click),
+                          (row, ' ' * max(0, width-2-len(name)-len(detail)), click)])
+            if index < len(values) - 1:
+                lines.append(('', '\n'))
+        return lines
+    control = FormattedTextControl(render, focusable=True, show_cursor=False)
+    rows = Window(control, height=Dimension(preferred=len(values), max=len(values)), wrap_lines=False)
+    return _screen(BANNER if home else f'ZENTR  /  {title.upper()}',
+                   'ARROWS TO MOVE · ENTER TO OPEN' if home else description, rows, control, keys,
+                   f'v{__version__}   ·   q quit' if home else '↑↓ move   ·   Enter open   ·   Esc back')
 
 
 def run_dialog(app):
@@ -88,10 +141,22 @@ def run_dialog(app):
 
 
 def ask(title, text, path=False):
-    result = run_dialog(input_dialog(title=title, text=text + '\nCancel to go back.',
-                          ok_text='Continue', cancel_text='Back',
-                          completer=PathCompleter(expanduser=True) if path else None,
-                          style=style()))
+    keys = KeyBindings()
+    def submit(buffer):
+        get_app().exit(result=buffer.text)
+        return True
+    field = TextArea(multiline=False, prompt='› ', style='class:field', height=1,
+                     completer=PathCompleter(expanduser=True) if path else None,
+                     accept_handler=submit)
+    @keys.add('tab', eager=True)
+    def complete(event):
+        if path:
+            if field.buffer.complete_state:
+                field.buffer.complete_next()
+            else:
+                field.buffer.start_completion(select_first=True)
+    hint = 'Enter continue   ·   Esc back' + ('   ·   Tab complete' if path else '')
+    result = _screen(f'ZENTR  /  {title.upper()}', text, field, field, keys, hint)
     if result is None or not result.strip():
         return None
     return str(Path(result).expanduser()) if path else result.strip()
@@ -100,7 +165,7 @@ def ask(title, text, path=False):
 def perform(run, args):
     # Full-screen dialogs restore the terminal before commands run. Links, files,
     # login messages and transfer progress retain their original stdout/stderr.
-    print('\n' + '-' * min(shutil.get_terminal_size().columns, 68))
+    print('\nZ E N T R   /   ' + args[2].upper())
     result = run(args)
     print('\n' + ('[OK] Finished.' if result == 0 else '[!] Command did not complete successfully.'))
     prompt('Press Enter to return to Zentr… ')

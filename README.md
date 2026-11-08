@@ -2,7 +2,7 @@
 
 ![Zentr CLI — your services, one terminal](assets/hero.svg)
 
-**The zentr.dev toolkit, right where you work.**
+**I built one terminal command for my zentr.dev services.**
 
 [![Checks](https://github.com/zentrdev/zentr-cli/actions/workflows/check.yml/badge.svg)](https://github.com/zentrdev/zentr-cli/actions/workflows/check.yml)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-a77bff?style=flat-square&labelColor=08060c)
@@ -15,52 +15,47 @@
 
 ---
 
-## One command. Your whole toolkit.
+## Why I built it
+
+I wanted to send someone a file, check whether one of my services was down, or convert a recording without opening three browser tabs. That’s what `zentr` is for. When I don’t remember a command, I run `zentr` and pick from the menu. When I do, I type it directly.
 
 ```text
- _____  _____  _   _  _____  ____
-|__  / | ____|| \ | ||_   _||  _ \
-  / /  |  _|  |  \| |  | |  | |_) |
- / /_  | |___ | |\  |  | |  |  _ <
-/____| |_____||_| \_|  |_|  |_| \_\
+● ● ●                                      zentr / terminal
+───────────────────────────────────────────────────────────
+Z E N T R
+ARROWS TO MOVE · ENTER TO OPEN
 
-$ zentr
+› STATUS     Service health and uptime
+  EXPLORE    Browse Zentr services
+  DROP       Encrypted file sharing
+  CONVERT    Convert a file
+  ACCOUNT    Browser sign-in
+  DOCS       Project documentation
+  QUIT       Return to shell
 ```
 
-Open a black-and-purple terminal interface. Check service health, share encrypted
-files, convert audio and images, or sign in with your Zentr account. Prefer a
-one-liner? Every operation is also available through commands.
-
-| | Inside Zentr |
-| :--- | :--- |
-| **⌘ Guided terminal** | Menus, ASCII branding, keyboard navigation, path completion, and prompts for missing inputs. |
-| **↗ Live service health** | Registry discovery, latency, uptime, and service status from Zentr's public APIs. |
-| **◇ Encrypted Drop** | The existing Drop CLI, bundled: files, text, downloads, status, and short links. |
-| **⇄ File conversion** | Discover available formats and stream files through Zentr Convert. |
-| **◎ One account** | Browser sign-in with PKCE and verified ID tokens; sessions stored through your OS keyring. |
-| **› Script-friendly** | JSON output for Python commands, ordinary exit codes, and no prompts in pipes. |
+I used the terminal in the banner as the design reference: a purple bar follows the selection, descriptions line up beside the commands, and file prompts stay in the same panel. On a narrow screen I shorten the descriptions so the command names stay readable.
 
 ## Get started
 
-**Python 3.10+** is required. Install **Node.js 20.11+** to use Drop. A separate Drop
-installation is not needed.
+I publish the CLI on [GitHub Releases](https://github.com/zentrdev/zentr-cli/releases). You’ll need **Python 3.10+**. For Drop, you’ll also need **Node.js 20.11+** on your PATH; I bundle the Drop CLI itself.
 
-With [uv](https://docs.astral.sh/uv/):
+With **uv**:
 
 ```sh
-uv tool install 'git+https://github.com/zentrdev/zentr-cli.git@v0.3.1'
+uv tool install 'git+https://github.com/zentrdev/zentr-cli.git@v0.4.0'
 zentr
 ```
 
-Or with [pipx](https://pipx.pypa.io/):
+With **pipx**:
 
 ```sh
-pipx install 'git+https://github.com/zentrdev/zentr-cli.git@v0.3.1'
+pipx install 'git+https://github.com/zentrdev/zentr-cli.git@v0.4.0'
 zentr
 ```
 
 <details>
-<summary><strong>Prefer a local checkout and virtual environment?</strong></summary>
+<summary>How I run it from a checkout</summary>
 
 ```sh
 git clone https://github.com/zentrdev/zentr-cli.git
@@ -71,133 +66,83 @@ python -m pip install .
 zentr
 ```
 
-On Windows, activate with `.venv\Scripts\activate` instead.
+On Windows, activate with `.venv\Scripts\activate`. I haven’t published the package to PyPI.
 
 </details>
 
-> **GitHub only.** Install from this repository or a [release](https://github.com/zentrdev/zentr-cli/releases). This project is not published to PyPI.
+## How I use it
 
-## Interactive when you want it
+**For sharing**, I can upload a file and get its encrypted link on stdout, or pipe text straight into Drop:
 
 ```sh
-zentr                         # Home screen
-zentr drop                    # Sharing menu
-zentr convert                 # Conversion menu
-zentr auth                    # Account menu
-zentr convert file voice.wav  # Ask for the missing format and output
+zentr drop --upload "$HOME/report.html" </dev/null
+printf 'Meet me at 7' | zentr drop text
 ```
 
-**↑ ↓** navigate · **Enter** opens · **Esc** goes back · **Tab** switches controls
-or completes paths · **Ctrl-C** dismisses a dialog
-
-The full ASCII logo appears in terminals at least **55 × 28**; smaller windows use
-a compact header. `NO_COLOR=1` selects monochrome. `zentr ui` and `zentr tui` open
-the home screen explicitly.
-
-### Direct when you need it
+**For conversion**, I check which formats the server currently offers, then choose one by ID:
 
 ```sh
-# Send a file. No menu, even with stdin closed.
-zentr drop --upload "$HOME/report.html" </dev/null
-
-# Pipe text straight into an encrypted share.
-printf 'hello from my terminal' | zentr drop text
-
-# Fetch machine-readable health data.
-zentr --json status > status.json
-
-# Convert a recording.
+zentr convert formats
 zentr convert file voice.wav --to audio-wav-mp3 -o voice.mp3
 ```
 
-Fully specified commands run directly. With noninteractive input/output or
-`TERM=dumb`, bare commands show the relevant help and missing arguments fail
-without prompting. JSON never includes the banner or menus.
+**For service health**, I use the menu when I’m exploring and JSON when I want a record:
+
+```sh
+zentr status
+zentr --json status > status.json
+```
+
+I kept the shell behavior predictable: fully specified commands run immediately. With stdin or stdout redirected, or `TERM=dumb`, the CLI won’t prompt. Bare `zentr` prints the command list, and omitted required inputs produce an argument error. In the menu, use **↑ ↓** to move, **Enter** to open, and **Esc** to go back. **Tab** cycles through menu rows or completes paths in file fields. Set `NO_COLOR=1` for monochrome.
 
 ## The commands
 
-| Command | What happens |
+| When I want to… | I run… |
 | :--- | :--- |
-| `zentr` | Open the home interface, or print help outside a terminal |
-| `zentr --login` | Sign in through your browser |
-| `zentr whoami` | Show your signed-in profile |
-| `zentr --logout` | Remove the local CLI session |
-| `zentr services` | Browse services interactively; list them outside a terminal |
-| `zentr status` | Explore service health interactively; print it outside a terminal |
-| `zentr open tools` | Open a registered service in your browser |
-| `zentr docs drop` | Open a project's documentation |
-| `zentr drop upload photo.png notes.pdf` | Encrypt and upload files |
-| `zentr drop text "hello"` | Create an encrypted text share |
-| `zentr drop get 'https://drop.zentr.dev/f/CODE5#KEY' -o downloads` | Decrypt and download a direct Drop link |
-| `zentr drop status CODE5` | Inspect a drop |
-| `zentr drop shorten 'https://example.com'` | Create a short URL |
-| `zentr convert formats` | List available conversion IDs |
-| `zentr --help` | Show all top-level commands and options |
+| Open the home screen | `zentr` |
+| Sign in through my browser | `zentr --login` |
+| Check which account I’m using | `zentr whoami` |
+| Remove my local session | `zentr --logout` |
+| Find a service or open its website | `zentr services` · `zentr open tools` |
+| Check a specific service | `zentr status convert` |
+| Read a project’s docs | `zentr docs drop` |
+| Share several files | `zentr drop upload photo.png notes.pdf` |
+| Download an encrypted file | `zentr drop get 'https://drop.zentr.dev/f/CODE5#KEY' -o downloads` |
+| Check a drop or shorten a URL | `zentr drop status CODE5` · `zentr drop shorten 'https://example.com'` |
+| See all options | `zentr --help` |
 
-`--upload` is an alias for `upload`. Put global flags **before** the command:
-`zentr --timeout 300 convert file photo.heic --to heic-jpeg -o photo.jpg`.
+I put global options before the command, as in `zentr --timeout 300 convert file photo.heic --to heic-jpeg -o photo.jpg`. The bundled Drop commands keep their own output and timeout behavior.
 
-## A few things worth knowing
+## What happens to my data?
 
 <details>
-<summary><strong>◇ Drop: encryption, limits, and links</strong></summary>
+<summary><strong>Drop: what I share with the recipient</strong></summary>
 
-- Files and text are encrypted locally with AES-256-GCM using the existing Drop protocol.
-- Up to **20 files / 10 GiB** per upload, subject to service limits.
-- The full share link, including `#KEY`, grants access. Keep it private and quote it in your shell.
-- Downloads verify encrypted chunks and never overwrite existing files. Completed files remain if a later file fails.
-- Upload links go to stdout; progress goes to stderr. Text downloads go to stdout.
-- Shortening strips the fragment before the API request and reattaches it locally.
-- CLI uploads are **anonymous and temporary**, even when you sign into Zentr. Permanent account storage is not implemented here.
-- Drop requires Node.js. The global `--json` and `--timeout` options do not apply to its bundled commands.
+I encrypt files and text locally with the original Drop CLI’s AES-256-GCM implementation. The full link, including its `#KEY`, gives the recipient access. Keep that fragment private and quote the link in your shell. When shortening a link, the CLI sends only the fragment-free URL and reattaches the fragment locally.
+
+I can upload up to **20 files / 10 GiB**, subject to service limits. Downloads verify each file and never overwrite existing files. CLI drops are anonymous and temporary, even when I’m signed into Zentr.
 
 </details>
 
 <details>
-<summary><strong>◎ Sign-in: your browser, your credential store</strong></summary>
+<summary><strong>Sign-in: where I keep the session</strong></summary>
 
-Run `zentr --login`, sign into auth.zentr.dev, and approve **Zentr CLI**.
-Keep localhost port **8787** free, and run your browser on the same computer.
+I use browser sign-in with S256 PKCE, one-time state, nonce checks, and verified ES256 ID tokens. Run `zentr --login` on the same computer as your browser and leave localhost port **8787** free for the callback. The CLI stores the session through your OS keyring. A working keyring backend is required.
 
-Login uses one-time state, S256 PKCE, nonce checks, and ES256 signature/issuer/audience/expiry
-validation. Sessions are saved through Python keyring; there is no built-in plaintext
-fallback. Windows and Linux need a working keyring backend. Sessions currently last
-about 15 minutes; sign in again when prompted. Logout removes the local CLI session,
-not your browser session or an already-issued token.
-
-For automation, `ZENTR_ACCESS_TOKEN` can supply an existing userinfo access token.
-It overrides the stored session and is not cleared by logout.
+Sessions currently last about 15 minutes. `zentr --logout` removes the local CLI session; it doesn’t sign out your browser. For scripts, `ZENTR_ACCESS_TOKEN` can supply an existing userinfo token instead.
 
 </details>
 
 <details>
-<summary><strong>⇄ Conversion: what leaves your computer</strong></summary>
+<summary><strong>Convert: where I send the file</strong></summary>
 
-Conversion uploads your file to the Zentr Convert server. It is not local processing.
-Choose an ID from `zentr convert formats`. Output files must be new; failed transfers
-remove their partial output. Server limits and rate limits still apply.
+I send the input file to Zentr Convert for server-side conversion. The destination must be a new file. If a transfer fails, the CLI removes the partial output. Check `zentr convert formats` before picking a conversion ID.
 
 </details>
 
-<details>
-<summary><strong>› Automation: streams, exit codes, and shell quoting</strong></summary>
+## Development
 
-Python commands support `--json`. Exit codes: **0** success, **1** service/runtime
-failure or a down status, **2** argument errors, **130** interrupted Python operations.
-Drop preserves its original exit behavior. Status reflects the public monitor's
-observations and timestamps, rather than new probes made by the CLI.
-
-When using `zsh -c`, quote the entire command:
-
-```sh
-zsh -c 'zentr drop --upload "$HOME/report.html"' </dev/null
-```
-
-`$HOME` already contains your home-directory path.
-
-</details>
-
-## Build something with it
+These are the checks I run from a local checkout:
 
 ```sh
 python -m pip install -e . pytest build
@@ -206,20 +151,12 @@ node --test tests/drop.test.mjs
 python -m build
 ```
 
-The test suite covers command dispatch, interactive fallbacks, OAuth callbacks and
-token validation, conversion transfers, and Drop cryptography. CI tests and builds
-the package; it does **not** publish to PyPI. Live service smoke checks are separate
-from CI and use disposable samples.
-
-Explore the [full usage guide](docs/usage.md), [open an issue](https://github.com/zentrdev/zentr-cli/issues),
-or browse the [Zentr services](https://zentr.dev).
+I keep the longer examples, shell quoting notes, and exit codes in the [usage guide](docs/usage.md). If something breaks, [open an issue](https://github.com/zentrdev/zentr-cli/issues) with the command you ran and what happened. Please leave out tokens and private Drop links.
 
 ---
 
 <div align="center">
 
-**Less clicking. More doing.**
-
-[**zentr.dev**](https://zentr.dev) · [Documentation](https://docs.zentr.dev) · [Releases](https://github.com/zentrdev/zentr-cli/releases)
+**My main account:** [@z-alexanderr](https://github.com/z-alexanderr) · **My services:** [zentr.dev](https://zentr.dev)
 
 </div>
